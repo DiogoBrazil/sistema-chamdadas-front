@@ -11,8 +11,7 @@ interface OfficeSelectionModalProps {
 export const OfficeSelectionModal: React.FC<OfficeSelectionModalProps> = ({
   isOpen,
   onClose,
-  onConfirm,
-  professionalId
+  onConfirm  
 }) => {
   const [office, setOffice] = useState<string>('');
   const [error, setError] = useState<string>('');

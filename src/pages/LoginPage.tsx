@@ -58,6 +58,7 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleSetOffice = async (office: number) => {
+    localStorage.setItem('officeNumber', JSON.stringify(office));
     if (!currentUser) return;
 
     try {
