@@ -1,27 +1,34 @@
-export interface User {
+declare global {
+  interface User {
     id: number;
     fullName: string;
     cpf: string;
-    profile: 'DOCTOR' | 'RECEPTIONIST';
+    profile: 'DOCTOR' | 'RECEPTIONIST' | 'ADMINISTRATOR';
     currentOffice?: number;
   }
   
-  export interface Patient {
+  interface Patient {
     id: number;
     fullName: string;
     cpf: string;
     birthDate: string;
   }
+
+  interface PatientResponse{
+    message: string;
+    data: Patient[];
+    status_code: number;
+  }
   
-  export interface Professional {
+  interface Professional {
     id: number;
     fullName: string;
     cpf: string;
-    profile: 'DOCTOR' | 'RECEPTIONIST';
+    profile: 'DOCTOR' | 'RECEPTIONIST' | 'ADMINISTRATOR';
     currentOffice?: number;
   }
   
-  export interface Attendance {
+  interface Attendance {
     id: number;
     patient: Patient;
     status: 'PENDING' | 'IN_PROGRESS' | 'FINISHED';
@@ -31,12 +38,18 @@ export interface User {
     officeNumber?: number;
   }
   
-  export interface LoginResponse {
-    token: string;
+  interface LoginResponse {   
     message: string;
-    user: User;
+    status_code: number;
+    data:{
+      token: string;
+      user: User;
+    }
   }
   
-  export interface ApiError {
+  interface ApiError {
     message: string;
   }
+}
+
+export default global;

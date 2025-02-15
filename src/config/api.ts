@@ -1,5 +1,8 @@
 export const API_URL = 'http://localhost:5000/api';
-export const WS_URL = 'http://localhost:5000'; // URL para o Socket.IO
+export const WS_URL = 'http://localhost:5000'; 
+
+export const apiKey =  "b1b15e88fa797225412429c1c50c122a1"
+
 
 export const API_ROUTES = {
   login: `${API_URL}/auth/login`,
@@ -11,7 +14,8 @@ export const API_ROUTES = {
 };
 
 export const getAuthHeader = () => ({
-  'Authorization': `Bearer ${localStorage.getItem('token')}`
+  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+  'api_key': apiKey, 
 });
 
 export const handleApiError = (error: any): string => {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { API_ROUTES, getAuthHeader, handleApiError } from '../../config/api';
 import { formatCPF, validateCPF } from '../../utils';
+import { addPatient } from '../../services/patientService';
+import toast from 'react-hot-toast';
 
 interface PatientFormProps {
   onBack: () => void;
@@ -13,17 +14,21 @@ interface FormData {
 }
 
 export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
-  const [formData, setFormData] = useState<FormData>({
-    fullName: '',
-    cpf: '',
-    birthDate: '',
-  });
+
+  const initialFormData: FormData = { fullName: '', cpf: '', birthDate: '' };
+  const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Usuário não autenticado');
+      setLoading(false);
+      return;
+    }
 
     if (!validateCPF(formData.cpf)) {
       setError('CPF inválido');
@@ -33,26 +38,17 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(API_ROUTES.patients, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader()
-        },
-        body: JSON.stringify({
-          ...formData,
-          cpf: formData.cpf.replace(/\D/g, '')
-        }),
+      await addPatient(token, formData);
+      toast.success('Paciente cadastrado com sucesso!', {
+        position: 'bottom-right',
+        style: { background: 'green', color: 'white' },
+      }); 
+      setFormData(initialFormData);     
+    } catch (err) {      
+      toast.error('Erro ao cadastrar paciente', {
+        position: 'bottom-right',
+        style: { background: 'red', color: 'white' },
       });
-
-      if (!response.ok) {
-        throw new Error('Erro ao cadastrar paciente');
-      }
-
-      alert('Paciente cadastrado com sucesso!');
-      onBack();
-    } catch (err) {
-      setError(handleApiError(err));
     } finally {
       setLoading(false);
     }
