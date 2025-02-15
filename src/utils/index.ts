@@ -3,8 +3,9 @@ export const formatCPF = (cpf: string): string => {
     return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
   
-  export const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString('pt-BR');
+  export const formatDate = (dateString: string): string => {
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
   };
   
   export const getProfileLabel = (profile: string): string => {
