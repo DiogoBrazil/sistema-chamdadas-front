@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { formatCPF, formatDate } from '../../utils';
-import { fetchPatients, createAttendance } from '../../services/patientService';
+import { fetchPatients, createAttendance, updatePatient, deletePatient } from '../../services/patientService';
 import toast from 'react-hot-toast';
+import { EditModal } from '../../components/EditModal';
 
 interface PatientListProps {
   onBack: () => void;
@@ -13,6 +14,8 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [loadingAttendance, setLoadingAttendance] = useState<number | null>(null);
+  const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchPatientList();
@@ -71,6 +74,59 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
   }, [loadingAttendance]);
 
+  const handleEdit = (patient: Patient) => {
+    setEditingPatient(patient);
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (formData: any) => {
+    if (!editingPatient) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Usuário não autenticado');
+      return;
+    }
+
+    try {
+      await updatePatient(editingPatient.id, token, formData);
+      toast.success('Paciente atualizado com sucesso!', {
+        position: 'bottom-right',
+        style: { background: 'green', color: 'white' },
+      });
+      fetchPatientList();
+    } catch (err) {
+      toast.error('Erro ao atualizar paciente', {
+        position: 'bottom-right',
+        style: { background: 'red', color: 'white' },
+      });
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Tem certeza que deseja excluir este paciente?')) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Usuário não autenticado');
+      return;
+    }
+
+    try {
+      await deletePatient(id, token);
+      toast.success('Paciente excluído com sucesso!', {
+        position: 'bottom-right',
+        style: { background: 'green', color: 'white' },
+      });
+      fetchPatientList();
+    } catch (err) {
+      toast.error('Erro ao excluir paciente', {
+        position: 'bottom-right',
+        style: { background: 'red', color: 'white' },
+      });
+    }
+  };
+
   const filteredPatients = patients.filter(patient =>
     patient.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.cpf.includes(searchTerm.replace(/\D/g, ''))
@@ -127,20 +183,72 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
                 <p className="text-sm text-gray-500">CPF: {formatCPF(patient.cpf)}</p>
                 <p className="text-sm text-gray-500">Data de Nascimento: {formatDate(patient.birthDate)}</p>
               </div>
-              <button
-                onClick={() => handleCreateAttendance(patient.id)}
-                className={`p-2 rounded-full transition-colors ${loadingAttendance === patient.id ? 'text-gray-500' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-100'}`}
-                aria-label="Gerar Atendimento"
-                disabled={loadingAttendance === patient.id}
-              >
-                {loadingAttendance === patient.id ? '⏳' : '📋'}
-              </button>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleEdit(patient)}
+                  className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-full transition-colors"
+                  title="Editar"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={() => handleDelete(patient.id)}
+                  className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
+                  title="Excluir"
+                >
+                  🗑️
+                </button>
+                <button
+                  onClick={() => handleCreateAttendance(patient.id)}
+                  className={`p-2 rounded-full transition-colors ${
+                    loadingAttendance === patient.id ? 'text-gray-500' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-100'
+                  }`}
+                  title="Gerar Atendimento"
+                  disabled={loadingAttendance === patient.id}
+                >
+                  {loadingAttendance === patient.id ? '⏳' : '📋'}
+                </button>
+              </div>
             </div>
           ))
         ) : (
           <p className="text-center text-gray-500">Nenhum paciente encontrado</p>
         )}
       </div>
+
+      {editingPatient && (
+        <EditModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingPatient(null);
+          }}
+          onConfirm={handleUpdate}
+          title="Editar Paciente"
+          fields={[
+            {
+              name: 'fullName',
+              label: 'Nome Completo',
+              type: 'text',
+              value: editingPatient.fullName
+            },
+            {
+              name: 'cpf',
+              label: 'CPF',
+              type: 'text',
+              value: editingPatient.cpf,
+              formatter: formatCPF
+            },
+            {
+              name: 'birthDate',
+              label: 'Data de Nascimento',
+              type: 'date',
+              value: editingPatient.birthDate
+            }
+          ]}
+          data={editingPatient}
+        />
+      )}
     </div>
   );
 };
