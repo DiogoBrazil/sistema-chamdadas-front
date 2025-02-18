@@ -2,6 +2,11 @@ export const formatCPF = (cpf: string): string => {
     const numbers = cpf.replace(/\D/g, '');
     return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
+
+export const replaceCPF = (cpf: string): string =>{
+  const cpfFormat = cpf.replace(/\D/g, '')
+  return cpfFormat
+}
   
   export const formatDate = (dateString: string): string => {
     const [year, month, day] = dateString.split('-');
@@ -38,6 +43,11 @@ export const formatCPF = (cpf: string): string => {
   export const isDoctor = (): boolean => {
     const user = getCurrentUser();
     return user?.profile === 'DOCTOR';
+  };
+
+  export const isAdmin = (): boolean => {
+    const user = getCurrentUser();
+    return user?.profile === 'ADMINISTRATOR';
   };
   
   export const validateCPF = (cpf: string): boolean => {

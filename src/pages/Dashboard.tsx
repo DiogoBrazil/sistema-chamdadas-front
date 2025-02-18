@@ -19,28 +19,28 @@ export const Dashboard: React.FC = () => {
       title: 'Pacientes',
       icon: '👤',
       path: '/patients',
-      roles: ['DOCTOR', 'RECEPTIONIST'],
+      roles: ['DOCTOR', 'RECEPTIONIST', 'ADMINISTRATOR'],
       description: 'Gerenciar pacientes e gerar atendimentos'
     },
     {
       title: 'Profissionais',
       icon: '👥',
       path: '/professionals',
-      roles: ['DOCTOR', 'RECEPTIONIST'],
+      roles: ['DOCTOR', 'RECEPTIONIST', 'ADMINISTRATOR'],
       description: 'Gerenciar médicos e recepcionistas'
     },
     {
       title: 'Consulta Médica',
       icon: '🏥',
       path: '/medical-consultation',
-      roles: ['DOCTOR'],
+      roles: ['DOCTOR', 'ADMINISTRATOR'],
       description: 'Gerenciar atendimentos médicos'
     },
     {
       title: 'Painel de Chamadas',
       icon: '📢',
       path: '/panel',
-      roles: ['DOCTOR', 'RECEPTIONIST'],
+      roles: ['DOCTOR', 'RECEPTIONIST', 'ADMINISTRATOR'],
       description: 'Visualizar chamadas de pacientes'
     }
   ];

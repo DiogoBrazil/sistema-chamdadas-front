@@ -7,7 +7,7 @@ import { PatientsPage } from './pages/patients/PatientsPage';
 import { ProfessionalsPage } from './pages/professionals/ProfessionalPage';
 import { MedicalConsultation } from './pages/MedicalConsultation';
 import { Layout } from './components/Layout';
-import { getCurrentUser, isDoctor } from './utils';
+import { getCurrentUser, isDoctor, isAdmin } from './utils';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
@@ -18,7 +18,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const DoctorRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isDoctor()) {
+  if (!isDoctor() && !isAdmin()) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
