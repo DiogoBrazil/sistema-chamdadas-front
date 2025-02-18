@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_ROUTES, getAuthHeader, handleApiError } from '../../config/api';
-import { Professional } from '../../types';
 import { formatCPF, getProfileLabel } from '../../utils';
+import { fetchProfessinals } from '../../services/professionalService';
 
 interface ProfessionalListProps {
   onBack: () => void;
@@ -18,17 +18,19 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   }, []);
 
   const fetchProfessionals = async () => {
+    const token = localStorage.getItem('token');
+    if(!token){
+      throw new Error('Usuario não autenticado')
+    }
     try {
-      const response = await fetch(API_ROUTES.professionals, {
-        headers: getAuthHeader()
-      });
+      setLoading(true);
+      const response = await fetchProfessinals(token);
 
-      if (!response.ok) {
+      if (response.status_code !== 200) {
         throw new Error('Erro ao buscar profissionais');
       }
 
-      const data = await response.json();
-      setProfessionals(data);
+      setProfessionals(response.data);
     } catch (err) {
       setError(handleApiError(err));
     } finally {

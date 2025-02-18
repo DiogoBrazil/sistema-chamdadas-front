@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAttendances, callPatient, finishAttendance } from '../services/ConsultaMedicaService';
 import classNames from 'classnames';
+import toast from 'react-hot-toast';
 
 export const MedicalConsultation: React.FC = React.memo(() => {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -43,7 +44,12 @@ export const MedicalConsultation: React.FC = React.memo(() => {
   const handleCallPatient = useCallback(async (attendanceId: number) => {
     if (!token) return;
     if (!officeNumber) {
-      alert('Número do consultório não definido.');
+      toast.error(
+        'Número do consultório não definido.',{
+          duration: 2000,
+          position: 'bottom-right',
+          style: {background:'red', color:'white'}
+        });      
       return;
     }
 
@@ -55,8 +61,13 @@ export const MedicalConsultation: React.FC = React.memo(() => {
           : a)
         ))
         ;
-    } catch (err) {
-      alert('Erro ao chamar paciente');
+    } catch (err) {      
+      toast.error(
+        'Erro ao chamar paciente',{
+          duration: 2000,
+          position: 'bottom-right',
+          style: {background:'red', color:'white'}
+        });
     }
   }, [token, officeNumber]);
 
@@ -67,7 +78,12 @@ export const MedicalConsultation: React.FC = React.memo(() => {
       await finishAttendance(attendanceId, user.id, token);
       setAttendances(prev => prev.filter(a => a.id !== attendanceId));
     } catch (err) {
-      alert('Erro ao finalizar atendimento');
+      toast.error(
+        'Erro ao finalizar atendimento',{
+          duration: 2000,
+          position: 'bottom-right',
+          style: {background:'red', color:'white'}
+        });      
     }
   }, [token, user]);
 

@@ -7,21 +7,13 @@ interface FormData {
     password: string;    
 }
 
-export const fetchProfessinals = async (token: string): Promise<PatientResponse> => {
-  const response = await apiClient.get<PatientResponse>('/api/professionals', {
+export const fetchProfessinals = async (token: string): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get('/api/professionals', {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   return response.data;
-};
-
-export const createAttendance = async (patientId: number, token: string) => {
-  await apiClient.post('/api/attendances',{ patientId },
-    { headers: {
-      Authorization: `Bearer ${token}`,
-    }, }
-  );
 };
 
 export const addProfessional = async (token: string, formData: FormData) => {

@@ -27,6 +27,12 @@ declare global {
     profile: 'DOCTOR' | 'RECEPTIONIST' | 'ADMINISTRATOR';
     currentOffice?: number;
   }
+
+  interface ProfessionalResponse{
+    message: string;
+    data: Professional[];
+    status_code: number;
+  }
   
   interface Attendance {
     id: number;
