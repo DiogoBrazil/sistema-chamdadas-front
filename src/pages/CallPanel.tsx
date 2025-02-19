@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from 'react';
-import { Attendance } from '../types';
 import { useSocket } from '../hooks/useSocket';
 import classNames from 'classnames';
 
@@ -18,8 +17,7 @@ export const CallPanel: React.FC = React.memo(() => {
   const speakPatientName = useCallback((attendance: Attendance) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const text = `${attendance.patient.fullName}, compareça ao consultório ${attendance.officeNumber}`;
-      console.log("consultorio numero", attendance.officeNumber)
+      const text = `${attendance.patient.fullName}, compareça ao consultório ${attendance.officeNumber}`;      
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'pt-BR';
       utterance.rate = 0.9;

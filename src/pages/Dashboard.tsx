@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, isDoctor } from '../utils';
+import { getCurrentUser } from '../utils';
 
 interface MenuCard {
   title: string;
@@ -26,14 +26,14 @@ export const Dashboard: React.FC = () => {
       title: 'Profissionais',
       icon: '👥',
       path: '/professionals',
-      roles: ['DOCTOR', 'RECEPTIONIST', 'ADMINISTRATOR'],
+      roles: ['ADMINISTRATOR'],
       description: 'Gerenciar médicos e recepcionistas'
     },
     {
       title: 'Consulta Médica',
       icon: '🏥',
       path: '/medical-consultation',
-      roles: ['DOCTOR', 'ADMINISTRATOR'],
+      roles: ['DOCTOR'],
       description: 'Gerenciar atendimentos médicos'
     },
     {

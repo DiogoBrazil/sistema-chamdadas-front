@@ -30,8 +30,9 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
       return;
     }
 
-    if (!validateCPF(formData.cpf)) {
-      setError('CPF inválido');
+    const cpfValidation = validateCPF(formData.cpf);
+    if (cpfValidation) {      
+      setError(cpfValidation);
       return;
     }
 

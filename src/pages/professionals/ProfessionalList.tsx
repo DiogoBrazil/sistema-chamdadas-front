@@ -3,6 +3,7 @@ import { formatCPF, getProfileLabel } from '../../utils';
 import { fetchProfessinals, updateProfessional, deleteProfessional } from '../../services/professionalService';
 import { handleApiError } from '../../config/api';
 import { EditModal } from '../../components/EditModal';
+import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
 import toast from 'react-hot-toast';
 
 interface ProfessionalListProps {
@@ -16,6 +17,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   const [error, setError] = useState<string>('');
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingProfessionalId, setDeletingProfessionalId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchProfessionals();
@@ -63,6 +65,8 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
         style: { background: 'green', color: 'white' },
       });
       fetchProfessionals();
+      setShowEditModal(false);
+      setEditingProfessional(null);
     } catch (err) {
       toast.error('Erro ao atualizar profissional', {
         position: 'bottom-right',
@@ -71,8 +75,12 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja excluir este profissional?')) return;
+  const handleDeleteClick = (id: number) => {
+    setDeletingProfessionalId(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingProfessionalId) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -81,7 +89,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
     }
 
     try {
-      await deleteProfessional(id, token);
+      await deleteProfessional(deletingProfessionalId, token);
       toast.success('Profissional excluído com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
@@ -92,6 +100,8 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
         position: 'bottom-right',
         style: { background: 'red', color: 'white' },
       });
+    } finally {
+      setDeletingProfessionalId(null);
     }
   };
 
@@ -163,7 +173,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
                 ✏️
               </button>
               <button
-                onClick={() => handleDelete(professional.id)}
+                onClick={() => handleDeleteClick(professional.id)}
                 className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
                 title="Excluir"
               >
@@ -194,13 +204,15 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
               name: 'fullName',
               label: 'Nome Completo',
               type: 'text',
-              value: editingProfessional.fullName
+              value: editingProfessional.fullName,
+              required: true,
             },
             {
               name: 'cpf',
               label: 'CPF',
               type: 'text',
               value: editingProfessional.cpf,
+              required: true,
               formatter: formatCPF
             },
             {
@@ -208,6 +220,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
               label: 'Perfil',
               type: 'select',
               value: editingProfessional.profile,
+              required: true,
               options: [
                 { value: 'ADMINISTRATOR', label: 'Administrador' },
                 { value: 'DOCTOR', label: 'Médico' },
@@ -218,6 +231,16 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
           data={editingProfessional}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deletingProfessionalId !== null}
+        onClose={() => setDeletingProfessionalId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Profissional"
+        message="Tem certeza que deseja excluir este profissional? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+      />
     </div>
   );
 };

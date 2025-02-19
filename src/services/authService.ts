@@ -2,8 +2,7 @@ import apiClient from "./apiClient";
 
 export const login = async (cpf: string, password: string): Promise<LoginResponse>  => {
   try{
-    const response = await apiClient.post('/api/auth/login', {cpf, password});
-    console.log("Resposta Login", response)
+    const response = await apiClient.post('/api/auth/login', {cpf, password});    
     return response.data;
   }catch(error: any){
     console.error("Erro no login", error.response?.data || error.message);

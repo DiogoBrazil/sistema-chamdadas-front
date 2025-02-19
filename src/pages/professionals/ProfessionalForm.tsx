@@ -69,7 +69,8 @@ export const ProfessionalForm: React.FC<ProfessionalFormProps> = ({ onBack }) =>
       newErrors.push({ field: 'fullName', message: 'Nome completo é obrigatório' });
     }
 
-    if (!validateCPF(formData.cpf)) {
+    const cpfValidation = validateCPF(formData.cpf);
+    if (cpfValidation) {
       newErrors.push({ field: 'cpf', message: 'CPF inválido' });
     }
 

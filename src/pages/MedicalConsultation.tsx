@@ -37,7 +37,7 @@ export const MedicalConsultation: React.FC = React.memo(() => {
 
   const statusMap: { [key in 'PENDING' | 'IN_PROGRESS' | 'FINISHED']: string } = {
     PENDING: 'Aguardando Atendimento',
-    IN_PROGRESS: `Em Atendimento no Consultório ${officeNumber}`,
+    IN_PROGRESS: `Em Atendimento`,
     FINISHED: 'Atendimento Finalizado',
   };
 

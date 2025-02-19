@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { OfficeSelectionModal } from '../components/OfficeSelectionModal';
 import { login, setOffice } from '../services/authService';
-import { Input } from '../components/Input';
-import { Button } from '../components/Button';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();

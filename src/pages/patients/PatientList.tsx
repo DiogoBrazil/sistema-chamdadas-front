@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { formatCPF, formatDate } from '../../utils';
+import React, { useState, useEffect } from 'react';
+import { formatCPF, formatDate, validateBirthDate, validateCPF } from '../../utils';
 import { fetchPatients, createAttendance, updatePatient, deletePatient } from '../../services/patientService';
 import toast from 'react-hot-toast';
 import { EditModal } from '../../components/EditModal';
+import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
 
 interface PatientListProps {
   onBack: () => void;
@@ -16,6 +17,8 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   const [loadingAttendance, setLoadingAttendance] = useState<number | null>(null);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingPatientId, setDeletingPatientId] = useState<number | null>(null);
+  const [attendancePatientId, setAttendancePatientId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchPatientList();
@@ -42,37 +45,46 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
   };
 
-  const handleCreateAttendance = useCallback(async (patientId: number) => {
+  const handleAttendanceClick = (id: number) => {
+    setAttendancePatientId(id);
+  };
+
+  const handleConfirmAttendance = async () => {
+    if (!attendancePatientId) return;
     if (loadingAttendance !== null) return;
 
-    setLoadingAttendance(patientId);
+    setLoadingAttendance(attendancePatientId);
     const token = localStorage.getItem('token');
     if (!token) {      
       setLoadingAttendance(null);
-      return     
+      setAttendancePatientId(null);
+      return;
     }
 
     try {
-      await createAttendance(patientId, token);
-      toast.success('Atendimento gerado com sucesso!', 
-        { duration: 4000, 
-          position: 'bottom-right',
-          style: { 
-            background: 'green', 
-            color: 'white' } 
-          });
+      await createAttendance(attendancePatientId, token);
+      toast.success('Atendimento gerado com sucesso!', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: 'green',
+          color: 'white'
+        }
+      });
     } catch (err) {
-      toast.error('Erro ao gerar atendimento.', 
-        { duration: 4000, 
-          position: 'bottom-right',
-          style: { 
-            background: 'red', 
-            color: 'white' } 
-          });
+      toast.error('Erro ao gerar atendimento.', {
+        duration: 4000,
+        position: 'bottom-right',
+        style: {
+          background: 'red',
+          color: 'white'
+        }
+      });
     } finally {
       setLoadingAttendance(null);
+      setAttendancePatientId(null);
     }
-  }, [loadingAttendance]);
+  };
 
   const handleEdit = (patient: Patient) => {
     setEditingPatient(patient);
@@ -95,6 +107,8 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
         style: { background: 'green', color: 'white' },
       });
       fetchPatientList();
+      setShowEditModal(false);
+      setEditingPatient(null);
     } catch (err) {
       toast.error('Erro ao atualizar paciente', {
         position: 'bottom-right',
@@ -103,8 +117,12 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Tem certeza que deseja excluir este paciente?')) return;
+  const handleDeleteClick = (id: number) => {    
+    setDeletingPatientId(id);
+  };
+
+  const handleConfirmDelete = async () => {    
+    if (!deletingPatientId) return;
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -112,18 +130,21 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       return;
     }
 
-    try {
-      await deletePatient(id, token);
+    try {      
+      await deletePatient(deletingPatientId, token);      
       toast.success('Paciente excluído com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
       fetchPatientList();
     } catch (err) {
+      console.error('Erro ao deletar:', err);
       toast.error('Erro ao excluir paciente', {
         position: 'bottom-right',
         style: { background: 'red', color: 'white' },
       });
+    } finally {
+      setDeletingPatientId(null);
     }
   };
 
@@ -192,14 +213,14 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
                   ✏️
                 </button>
                 <button
-                  onClick={() => handleDelete(patient.id)}
+                  onClick={() => handleDeleteClick(patient.id)}
                   className="p-2 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-full transition-colors"
                   title="Excluir"
                 >
                   🗑️
                 </button>
                 <button
-                  onClick={() => handleCreateAttendance(patient.id)}
+                  onClick={() => handleAttendanceClick(patient.id)}
                   className={`p-2 rounded-full transition-colors ${
                     loadingAttendance === patient.id ? 'text-gray-500' : 'text-blue-600 hover:text-blue-800 hover:bg-blue-100'
                   }`}
@@ -230,25 +251,51 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
               name: 'fullName',
               label: 'Nome Completo',
               type: 'text',
-              value: editingPatient.fullName
+              value: editingPatient.fullName,
+              required: true,
             },
             {
               name: 'cpf',
               label: 'CPF',
               type: 'text',
               value: editingPatient.cpf,
-              formatter: formatCPF
+              required: true,
+              formatter: formatCPF,
+              validator: validateCPF,
+              placeholder: '000.000.000-00'
             },
             {
               name: 'birthDate',
               label: 'Data de Nascimento',
               type: 'date',
-              value: editingPatient.birthDate
+              value: editingPatient.birthDate,
+              required: true,
+              validator: validateBirthDate
             }
           ]}
           data={editingPatient}
         />
       )}
+
+      <ConfirmModal
+        isOpen={deletingPatientId !== null}
+        onClose={() => setDeletingPatientId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Excluir Paciente"
+        message="Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+      />
+
+      <ConfirmModal
+        isOpen={attendancePatientId !== null}
+        onClose={() => setAttendancePatientId(null)}
+        onConfirm={handleConfirmAttendance}
+        title="Gerar Atendimento"
+        message="Deseja gerar um novo atendimento para este paciente?"
+        confirmLabel="Gerar"
+        cancelLabel="Cancelar"
+      />
     </div>
   );
 };

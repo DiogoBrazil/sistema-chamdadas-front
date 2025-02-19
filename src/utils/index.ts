@@ -50,10 +50,65 @@ export const replaceCPF = (cpf: string): string =>{
     return user?.profile === 'ADMINISTRATOR';
   };
   
-  export const validateCPF = (cpf: string): boolean => {
+  export const validateCPF = (cpf: string): string | undefined => {
+    // Remove caracteres não numéricos
     const numbers = cpf.replace(/\D/g, '');
-    if (numbers.length !== 11) return false;
+  
+    // Verifica se tem 11 dígitos
+    if (numbers.length !== 11) {
+      return 'CPF deve ter 11 dígitos';
+    }
+  
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1+$/.test(numbers)) {
+      return 'CPF inválido';
+    }
+  
+    // Converte string em array de números
+    const digits = numbers.split('').map(Number);
+  
+    // Calcula primeiro dígito verificador
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += digits[i] * (10 - i);
+    }
+    let firstDigit = 11 - (sum % 11);
+    if (firstDigit > 9) firstDigit = 0;
+  
+    // Verifica primeiro dígito
+    if (firstDigit !== digits[9]) {
+      return 'CPF inválido';
+    }
+  
+    // Calcula segundo dígito verificador
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += digits[i] * (11 - i);
+    }
+    let secondDigit = 11 - (sum % 11);
+    if (secondDigit > 9) secondDigit = 0;
+  
+    // Verifica segundo dígito
+    if (secondDigit !== digits[10]) {
+      return 'CPF inválido';
+    }
+  
+    return undefined;
+  };
+
+  export const validateBirthDate = (value: string): string | undefined => {
+    const date = new Date(value);
+    const today = new Date();
     
-    // Implementar validação completa de CPF se necessário
-    return true;
+    if (date > today) {
+      return 'Data não pode ser futura';
+    }
+    
+    const minDate = new Date();
+    minDate.setFullYear(minDate.getFullYear() - 130);
+    if (date < minDate) {
+      return 'Data muito antiga';
+    }
+    
+    return undefined;
   };
