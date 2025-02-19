@@ -15,6 +15,7 @@ declare global {
   }
 
   interface PatientResponse{
+    pagination: any;
     message: string;
     data: Patient[];
     status_code: number;

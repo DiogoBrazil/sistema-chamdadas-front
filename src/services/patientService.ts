@@ -6,8 +6,35 @@ interface FormData{
   birthDate: string;
 }
 
-export const fetchPatients = async (token: string): Promise<PatientResponse> => {
-  const response = await apiClient.get<PatientResponse>('/api/patients', {
+// export const fetchPatients = async (token: string): Promise<PatientResponse> => {
+//   const response = await apiClient.get<PatientResponse>('/api/patients', {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   });
+//   return response.data;
+// };
+
+export const fetchPatientsByPage = async (token: string, page: number): Promise<PatientResponse> => {
+  const response = await apiClient.get<PatientResponse>(`/api/patients/page/${page}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchPatientByCpf = async (token: string, cpf: string): Promise<PatientResponse> => {
+  const response = await apiClient.get<PatientResponse>(`/api/patients/cpf/${cpf}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchPatientsByName = async (token: string, name: string): Promise<PatientResponse> => {
+  const response = await apiClient.get<PatientResponse>(`/api/patients/name/${name}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
