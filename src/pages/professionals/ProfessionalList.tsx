@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCPF, getProfileLabel, replaceCPF, validateConfirmPassword, validateCPF  } from '../../utils';
+import { formatCPF, getProfileLabel, replaceCPF, validateCPF  } from '../../utils';
 import { fetchProfessinalsByPage, updateProfessional, deleteProfessional, searchProfessinalsByCpf, searchProfessinalsByName, addProfessional } from '../../services/professionalService';
 import { EditModal } from '../../components/EditModal';
 import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
@@ -7,11 +7,6 @@ import toast from 'react-hot-toast';
 
 interface ProfessionalListProps {
   onBack: () => void;
-}
-
-interface FormError {
-  field: string;
-  message: string;
 }
 
 export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) => {
