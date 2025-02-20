@@ -7,7 +7,7 @@ interface FormData {
     password: string;    
 }
 
-export const fetchProfessinalsByPage = async (token: string, page: number): Promise<ProfessionalResponse> => {
+export const fetchProfessionalsByPage = async (token: string, page: number): Promise<ProfessionalResponse> => {
   const response = await apiClient.get(`/api/professionals/page/${page}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -16,7 +16,7 @@ export const fetchProfessinalsByPage = async (token: string, page: number): Prom
   return response.data;
 };
 
-export const searchProfessinalsByCpf = async (token: string, cpf: string): Promise<ProfessionalResponse> => {
+export const searchProfessionalByCpf = async (token: string, cpf: string): Promise<ProfessionalResponse> => {
   const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/cpf/${cpf}`, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -25,7 +25,7 @@ export const searchProfessinalsByCpf = async (token: string, cpf: string): Promi
   return response.data;
 };
 
-export const searchProfessinalsByName = async (token: string, name: string): Promise<ProfessionalResponse> => {
+export const searchProfessionalsByName = async (token: string, name: string): Promise<ProfessionalResponse> => {
   const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/name/${name}`, {
     headers: {
       Authorization: `Bearer ${token}`,
