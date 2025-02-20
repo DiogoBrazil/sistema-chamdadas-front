@@ -21,8 +21,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingProfessionalId, setDeletingProfessionalId] = useState<number | null>(null);
-  const [showNewProfessionalsModal, setShowNewProfessionalsModal] = useState(false);
-  const [formErrors, setFormErrors] = useState<FormError[]>([]);
+  const [showNewProfessionalsModal, setShowNewProfessionalsModal] = useState(false);  
 
   // Estados para busca e paginação
   const [searchName, setSearchName] = useState<string>('');
@@ -346,10 +345,7 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
       {showNewProfessionalsModal && (
         <EditModal
           isOpen={showNewProfessionalsModal}
-          onClose={() => {
-            setShowNewProfessionalsModal(false),
-            setFormErrors([])
-          }}
+          onClose={() => setShowNewProfessionalsModal(false)}
           onConfirm={handleCreateProfessional}
           title="Cadastrar Novo Profissional"
           fields={[
