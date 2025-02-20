@@ -15,7 +15,11 @@ declare global {
   }
 
   interface PatientResponse{
-    pagination: any;
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+    };
     message: string;
     data: Patient[];
     status_code: number;
@@ -30,6 +34,11 @@ declare global {
   }
 
   interface ProfessionalResponse{
+    pagination?: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+    };
     message: string;
     data: Professional[];
     status_code: number;

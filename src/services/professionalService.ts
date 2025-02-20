@@ -1,11 +1,40 @@
+// sistema-chamadas-react/src/services/professionalService.ts
+
 import apiClient from "./apiClient";
 
 interface FormData {
     fullName: string;
     cpf: string;
     profile: 'DOCTOR' | 'RECEPTIONIST' | 'ADMINISTRATOR';
-    password: string;    
+    password?: string;    
 }
+
+export const fetchProfessionalsByPage = async (token: string, page: number): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/page/${page}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchProfessionalByCpf = async (token: string, cpf: string): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/cpf/${cpf}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchProfessionalsByName = async (token: string, name: string): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/name/${name}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
 
 export const fetchProfessinals = async (token: string): Promise<ProfessionalResponse> => {
   const response = await apiClient.get('/api/professionals', {
