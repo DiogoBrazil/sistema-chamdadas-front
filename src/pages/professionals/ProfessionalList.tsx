@@ -1,3 +1,5 @@
+// sistema-chamadas-react/src/pages/professionals/ProfessionalList.tsx
+
 import React, { useState, useEffect } from 'react';
 import { formatCPF, replaceCPF, getProfileLabel } from '../../utils';
 import { 
@@ -10,6 +12,7 @@ import {
 } from '../../services/professionalService';
 import { EditModal } from '../../components/EditModal';
 import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
+import { ReportModal } from '../../components/ui/ReportModal';
 import toast from 'react-hot-toast';
 
 interface ProfessionalListProps {
@@ -24,6 +27,8 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingProfessionalId, setDeletingProfessionalId] = useState<number | null>(null);
   const [showNewProfessionalModal, setShowNewProfessionalModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedProfessionalForReport, setSelectedProfessionalForReport] = useState<Professional | null>(null);
   
   // Estados para busca e paginação
   const [searchName, setSearchName] = useState<string>('');
@@ -189,6 +194,11 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
     setDeletingProfessionalId(id);
   };
 
+  const handleShowReport = (professional: Professional) => {
+    setSelectedProfessionalForReport(professional);
+    setShowReportModal(true);
+  };
+
   const handleConfirmDelete = async () => {    
     if (!deletingProfessionalId) return;
 
@@ -330,6 +340,15 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
                 >
                   🗑️
                 </button>
+                {professional.profile === 'DOCTOR' && (
+                  <button
+                    onClick={() => handleShowReport(professional)}
+                    className="p-2 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-full transition-colors"
+                    title="Ver Produtividade"
+                  >
+                    📊
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -508,6 +527,18 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
         confirmLabel="Excluir"
         cancelLabel="Cancelar"
       />
+
+      {selectedProfessionalForReport && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => {
+            setShowReportModal(false);
+            setSelectedProfessionalForReport(null);
+          }}
+          professionalId={selectedProfessionalForReport.id}
+          professionalName={selectedProfessionalForReport.fullName}
+        />
+      )}
     </div>
   );
 };

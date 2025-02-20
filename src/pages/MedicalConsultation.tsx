@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchAttendances, callPatient, finishAttendance } from '../services/ConsultaMedicaService';
+import { ReportModal } from '../components/ui/ReportModal';
 import classNames from 'classnames';
 import toast from 'react-hot-toast';
 
@@ -9,11 +10,15 @@ export const MedicalConsultation: React.FC = React.memo(() => {
   const [error, setError] = useState('');
   const [officeNumber, setOfficeNumber] = useState<string>('');
   const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<{ id: number } | null>(null);
+  const [user, setUser] = useState<{ id: number; fullName: string } | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     setToken(localStorage.getItem('token'));
-    setUser(JSON.parse(localStorage.getItem('user') || '{}'));
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      setUser(JSON.parse(userStr));
+    }
     setOfficeNumber(localStorage.getItem('officeNumber') || '');
 
     if (!token) return;
@@ -106,7 +111,17 @@ export const MedicalConsultation: React.FC = React.memo(() => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Consulta Médica</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Consulta Médica</h1>
+          {user && (
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            >
+              Ver Meus Atendimentos
+            </button>
+          )}
+        </div>
 
         <div className="bg-white shadow rounded-lg p-6">
           {attendances.length === 0 ? (
@@ -151,6 +166,15 @@ export const MedicalConsultation: React.FC = React.memo(() => {
           )}
         </div>
       </div>
+
+      {user && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          professionalId={user.id}
+          professionalName={user.fullName}
+        />
+      )}
     </div>
   );
 });
