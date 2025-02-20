@@ -1,5 +1,3 @@
-// sistema-chamadas-react/src/components/ui/ReportModal.tsx
-
 import React, { useState } from 'react';
 import { Modal } from '../Modal';
 import { getAttendanceReport } from '../../services/reportService';
