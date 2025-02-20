@@ -30,6 +30,7 @@ declare global {
   }
 
   interface ProfessionalResponse{
+    pagination: any;
     message: string;
     data: Professional[];
     status_code: number;

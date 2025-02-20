@@ -14,6 +14,7 @@ export interface Option {
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
+    error?: string
   }
   
   export interface EditModalProps<T extends Record<string, any>> {

@@ -1,10 +1,13 @@
+//Formatação utilizada para exibir no front
 export const formatCPF = (cpf: string): string => {
     const numbers = cpf.replace(/\D/g, '');
     return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   };
 
+//Formatação para salvar sem pontos e traços no banco
 export const replaceCPF = (cpf: string): string =>{
   const cpfFormat = cpf.replace(/\D/g, '')
+  console.log("CPF FORMATADO", cpfFormat)
   return cpfFormat
 }
   
@@ -112,3 +115,11 @@ export const replaceCPF = (cpf: string): string =>{
     
     return undefined;
   };
+  
+  export const validateConfirmPassword = (value: string, formData?: any): string | undefined => {
+    if (value !== formData?.password) {
+      return 'As senhas não coincidem';
+    }
+    return undefined;
+  }; 
+  

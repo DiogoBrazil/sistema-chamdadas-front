@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { formatCPF, formatDate, validateBirthDate, validateCPF } from '../../utils';
+import { formatCPF, formatDate, replaceCPF, validateBirthDate, validateCPF } from '../../utils';
 import { 
   fetchPatientsByPage, 
   createAttendance, 
@@ -80,7 +80,7 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   
     try {
       if (searchCpf) {
-        const response = await searchPatientByCpf(token, searchCpf);
+        const response = await searchPatientByCpf(token, replaceCPF(searchCpf));
         // Se encontrou o paciente, coloca em um array se necessário, senão array vazio
         setPatients(Array.isArray(response.data) ? response.data : (response.data ? [response.data] : []));
       } else if (searchName) {
@@ -102,7 +102,10 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
 
     try {
-      await addPatient(token, formData);
+      await addPatient(token, {
+                ...formData,
+                cpf: replaceCPF(formData.cpf)
+              });
       toast.success('Paciente cadastrado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
@@ -183,7 +186,10 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
 
     try {
-      await updatePatient(editingPatient.id, token, formData);
+      await updatePatient(editingPatient.id, token, {
+                    ...formData,
+                    cpf: replaceCPF(formData.cpf)
+                  });
       toast.success('Paciente atualizado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },

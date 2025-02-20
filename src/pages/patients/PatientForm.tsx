@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { formatCPF, validateCPF } from '../../utils';
+import { formatCPF, replaceCPF, validateCPF } from '../../utils';
 import { addPatient } from '../../services/patientService';
 import toast from 'react-hot-toast';
 
@@ -13,12 +13,18 @@ interface FormData {
   birthDate: string;
 }
 
+interface FormError {
+  field: keyof FormData;
+  message: string;
+}
+
 export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
 
   const initialFormData: FormData = { fullName: '', cpf: '', birthDate: '' };
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<FormError[]>([]);
+  const [loading, setLoading] = useState<boolean>(false); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +45,10 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
     setLoading(true);
 
     try {
-      await addPatient(token, formData);
+      await addPatient(token, {
+              ...formData,
+              cpf: replaceCPF(formData.cpf)
+            });
       toast.success('Paciente cadastrado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },

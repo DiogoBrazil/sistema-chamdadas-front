@@ -7,8 +7,26 @@ interface FormData {
     password: string;    
 }
 
-export const fetchProfessinals = async (token: string): Promise<ProfessionalResponse> => {
-  const response = await apiClient.get('/api/professionals', {
+export const fetchProfessinalsByPage = async (token: string, page: number): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get(`/api/professionals/page/${page}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchProfessinalsByCpf = async (token: string, cpf: string): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/cpf/${cpf}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const searchProfessinalsByName = async (token: string, name: string): Promise<ProfessionalResponse> => {
+  const response = await apiClient.get<ProfessionalResponse>(`/api/professionals/name/${name}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -20,7 +38,7 @@ export const addProfessional = async (token: string, formData: FormData) => {
   if(!token){
     throw new Error('Token não encontrado')
   }
-
+  console.log("FormData no back", formData)
   try {
     const response = await apiClient.post(
       '/api/professionals',      

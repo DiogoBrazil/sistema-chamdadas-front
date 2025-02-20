@@ -6,15 +6,6 @@ interface FormData{
   birthDate: string;
 }
 
-// export const fetchPatients = async (token: string): Promise<PatientResponse> => {
-//   const response = await apiClient.get<PatientResponse>('/api/patients', {
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//     },
-//   });
-//   return response.data;
-// };
-
 export const fetchPatientsByPage = async (token: string, page: number): Promise<PatientResponse> => {
   const response = await apiClient.get<PatientResponse>(`/api/patients/page/${page}`, {
     headers: {
