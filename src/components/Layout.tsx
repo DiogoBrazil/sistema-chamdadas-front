@@ -43,7 +43,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, title }) => {
                   onClick={() => navigate("/dashboard")}
                   className="text-xl font-bold text-blue-600 hover:text-blue-800"
                 >
-                  Sistema de Chamadas
+                  <span className="mr-2">🏠</span>
+                  MediCall - Sistema de Chamadas de Pacientes
                 </button>
                 {title && <span className="text-gray-700 text-lg">/ {title}</span>}
               </div>

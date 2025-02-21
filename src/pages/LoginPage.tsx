@@ -57,7 +57,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-green-400 py-12 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-lg shadow-lg">
-        <h2 className="text-center text-3xl font-bold text-gray-900">Sistema de Chamadas</h2>
+        <h2 className="text-center text-3xl font-bold text-gray-900">MedCall</h2>
 
         <form onSubmit={handleLogin} className="mt-6 space-y-4">
           <Input
