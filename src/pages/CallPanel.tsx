@@ -1,13 +1,53 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useSocket } from '../hooks/useSocket';
 import classNames from 'classnames';
 
 export const CallPanel: React.FC = React.memo(() => {
   const [currentCall, setCurrentCall] = useState<Attendance | null>(null);
   const [callHistory, setCallHistory] = useState<(Attendance & { callTime: Date })[]>([]);
+  
+  // Fila de pronúncias
+  const speechQueue = useRef<Attendance[]>([]);
+  const isSpeaking = useRef<boolean>(false);
+  
+  // Função para processar a fila de pronúncias
+  const processSpeechQueue = useCallback(() => {
+    if (speechQueue.current.length === 0 || isSpeaking.current) return;
+    
+    isSpeaking.current = true;
+    const nextAttendance = speechQueue.current[0];
+    
+    const text = `${nextAttendance.patient.fullName}, compareça ao consultório ${nextAttendance.officeNumber}`;      
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.9;
+    
+    // Quando terminar de falar, remove da fila e processa o próximo
+    utterance.onend = () => {
+      speechQueue.current.shift(); // Remove o primeiro item da fila
+      isSpeaking.current = false;
+      processSpeechQueue(); // Processa o próximo item da fila
+    };
+    
+    // Se ocorrer erro na pronúncia, não trava a fila
+    utterance.onerror = () => {
+      speechQueue.current.shift();
+      isSpeaking.current = false;
+      processSpeechQueue();
+    };
+    
+    window.speechSynthesis.speak(utterance);
+  }, []);
+  
+  // Adiciona à fila de pronúncia
+  const speakPatientName = useCallback((attendance: Attendance) => {
+    if ('speechSynthesis' in window) {
+      speechQueue.current.push(attendance);
+      processSpeechQueue();
+    }
+  }, [processSpeechQueue]);
 
   const handleNewCall = useCallback((attendance: Attendance) => {
-    // Adiciona a hora da chamada ao atendimento
     const callWithTime = { 
       ...attendance, 
       callTime: new Date() 
@@ -16,24 +56,22 @@ export const CallPanel: React.FC = React.memo(() => {
     setCurrentCall(callWithTime);
     setCallHistory(prev => [callWithTime, ...prev].slice(0, 5));
     speakPatientName(attendance);
-  }, []);
+  }, [speakPatientName]);
 
   const { connectionStatus } = useSocket(handleNewCall);
+
+  // Limpar a síntese de fala quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
-
-  const speakPatientName = useCallback((attendance: Attendance) => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const text = `${attendance.patient.fullName}, compareça ao consultório ${attendance.officeNumber}`;      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    }
-  }, []);
 
   const getConnectionStatusColor = useCallback(() => {
     switch (connectionStatus) {
