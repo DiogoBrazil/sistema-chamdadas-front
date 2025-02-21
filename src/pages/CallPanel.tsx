@@ -4,15 +4,25 @@ import classNames from 'classnames';
 
 export const CallPanel: React.FC = React.memo(() => {
   const [currentCall, setCurrentCall] = useState<Attendance | null>(null);
-  const [callHistory, setCallHistory] = useState<Attendance[]>([]);
+  const [callHistory, setCallHistory] = useState<(Attendance & { callTime: Date })[]>([]);
 
   const handleNewCall = useCallback((attendance: Attendance) => {
-    setCurrentCall(attendance);
-    setCallHistory(prev => [attendance, ...prev].slice(0, 5));
+    // Adiciona a hora da chamada ao atendimento
+    const callWithTime = { 
+      ...attendance, 
+      callTime: new Date() 
+    };
+    
+    setCurrentCall(callWithTime);
+    setCallHistory(prev => [callWithTime, ...prev].slice(0, 5));
     speakPatientName(attendance);
   }, []);
 
   const { connectionStatus } = useSocket(handleNewCall);
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   const speakPatientName = useCallback((attendance: Attendance) => {
     if ('speechSynthesis' in window) {
@@ -80,10 +90,17 @@ export const CallPanel: React.FC = React.memo(() => {
                 key={`${call.id}-${index}`}
                 className="p-4 border rounded-lg bg-gray-50"
               >
-                <p className="font-medium text-gray-900">{call.patient.fullName}</p>
-                <p className="text-sm text-gray-600">
-                  Consultório {call.officeNumber}
-                </p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="font-medium text-gray-900">{call.patient.fullName}</p>
+                    <p className="text-sm text-gray-600">
+                      Consultório {call.officeNumber}
+                    </p>
+                  </div>
+                  <p className="text-sm font-medium text-gray-500">
+                    {call.callTime && formatTime(call.callTime)}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
