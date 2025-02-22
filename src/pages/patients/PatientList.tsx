@@ -34,20 +34,41 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Novos estados para o polling
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Inicial fetch
   useEffect(() => {
     fetchPatientList(1);
   }, []);
+  
+  // Polling effect
+  useEffect(() => {
+    // Não fazer polling quando estiver em modo de busca
+    if (isSearching) return;
+    
+    const intervalId = setInterval(() => {
+      // Recarregar os dados da página atual, mas não mostrar o loading
+      refreshPatientList(currentPage);
+    }, 10000); // 10 segundos
+    
+    return () => clearInterval(intervalId);
+  }, [currentPage, isSearching]);
 
+  // Função normal de fetch com loading
   const fetchPatientList = async (page: number) => {
     setLoading(true);
     setError('');
     setIsSearching(false);
+    setIsRefreshing(true);
     
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado.');
       setLoading(false);
+      setIsRefreshing(false);
       return;
     }
 
@@ -56,10 +77,37 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       setPatients(response.data);
       setCurrentPage(response.pagination.currentPage);
       setTotalPages(response.pagination.totalPages);
+      setLastUpdated(new Date());
     } catch (err) {
       setError('Erro ao buscar pacientes.');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+  
+  // Função para refresh silencioso (sem loading geral)
+  const refreshPatientList = async (page: number) => {
+    if (isRefreshing) return; // Evita múltiplas atualizações
+    
+    setIsRefreshing(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsRefreshing(false);
+      return;
+    }
+
+    try {
+      const response = await fetchPatientsByPage(token, page);
+      setPatients(response.data);
+      setCurrentPage(response.pagination.currentPage);
+      setTotalPages(response.pagination.totalPages);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Erro ao atualizar pacientes:', err);
+      // Não mostra erro para o usuário em atualizações silenciosas
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -70,11 +118,13 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   
     setLoading(true);
     setIsSearching(true);
+    setIsRefreshing(true);
     
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       setLoading(false);
+      setIsRefreshing(false);
       return;
     }
   
@@ -87,10 +137,12 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
         const response = await searchPatientsByName(token, searchName);
         setPatients(response.data);
       }
+      setLastUpdated(new Date());
     } catch (err) {
       setPatients([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -153,15 +205,29 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
           color: 'white'
         }
       });
-    } catch (err) {
-      toast.error('Erro ao gerar atendimento.', {
-        duration: 4000,
-        position: 'bottom-right',
-        style: {
-          background: 'red',
-          color: 'white'
+    } catch (err: any) {
+      // Verifica se o erro é devido a paciente não encontrado (já foi excluído)
+      if (err.response && err.response.status === 404) {
+        toast.error('Este paciente não foi encontrado. A lista será atualizada.', {
+          position: 'bottom-right',
+          style: { background: 'red', color: 'white' },
+        });
+        // Atualiza a lista automaticamente
+        if (isSearching) {
+          handleSearch();
+        } else {
+          fetchPatientList(currentPage);
         }
-      });
+      } else {
+        toast.error('Erro ao gerar atendimento.', {
+          duration: 4000,
+          position: 'bottom-right',
+          style: {
+            background: 'red',
+            color: 'white'
+          }
+        });
+      }
     } finally {
       setLoadingAttendance(null);
       setAttendancePatientId(null);
@@ -195,11 +261,27 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       }
       setShowEditModal(false);
       setEditingPatient(null);
-    } catch (err) {
-      toast.error('Erro ao atualizar paciente', {
-        position: 'bottom-right',
-        style: { background: 'red', color: 'white' },
-      });
+    } catch (err: any) {
+      // Verifica se o erro é devido a paciente não encontrado (já foi excluído)
+      if (err.response && err.response.status === 404) {
+        toast.error('Este paciente não foi encontrado. A lista será atualizada.', {
+          position: 'bottom-right',
+          style: { background: 'red', color: 'white' },
+        });
+        // Atualiza a lista automaticamente
+        if (isSearching) {
+          handleSearch();
+        } else {
+          fetchPatientList(currentPage);
+        }
+      } else {
+        toast.error('Erro ao atualizar paciente', {
+          position: 'bottom-right',
+          style: { background: 'red', color: 'white' },
+        });
+      }
+      setShowEditModal(false);
+      setEditingPatient(null);
     }
   };
 
@@ -227,12 +309,28 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       } else {
         fetchPatientList(currentPage);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Erro ao deletar:', err);
-      toast.error('Erro ao excluir paciente', {
-        position: 'bottom-right',
-        style: { background: 'red', color: 'white' },
-      });
+      
+      // Se o erro for 404 (Não encontrado) ou outro erro de conflito
+      if (err.response && (err.response.status === 404 || err.response.status === 409)) {
+        toast.error('Este paciente já foi excluído ou modificado por outro usuário. A lista será atualizada.', {
+          position: 'bottom-right',
+          style: { background: 'red', color: 'white' },
+        });
+        
+        // Atualiza a lista automaticamente quando detectar conflito
+        if (isSearching) {
+          handleSearch();
+        } else {
+          fetchPatientList(currentPage);
+        }
+      } else {
+        toast.error('Paciente não pode ser excluído, pois possui histórico de atendimento', {
+          position: 'bottom-right',
+          style: { background: 'red', color: 'white' },
+        });
+      }
     } finally {
       setDeletingPatientId(null);
     }
@@ -315,6 +413,35 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           Buscar
+        </button>
+      </div>
+
+      {/* Indicador de Atualização */}
+      <div className="flex justify-between items-center mb-4 text-sm text-gray-500">
+        <span>
+          Última atualização: {lastUpdated.toLocaleTimeString()}
+        </span>
+        <button
+          onClick={() => isSearching ? handleSearch() : fetchPatientList(currentPage)}
+          className="flex items-center px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          disabled={isRefreshing}
+        >
+          {isRefreshing ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Atualizando...
+            </>
+          ) : (
+            <>
+              <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Atualizar
+            </>
+          )}
         </button>
       </div>
 

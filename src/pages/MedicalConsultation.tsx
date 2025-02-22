@@ -36,7 +36,7 @@ export const MedicalConsultation: React.FC = React.memo(() => {
     };
 
     loadAttendances();
-    const interval = setInterval(loadAttendances, 30000);
+    const interval = setInterval(loadAttendances, 10000);
     return () => clearInterval(interval);
   }, [token]);
 
