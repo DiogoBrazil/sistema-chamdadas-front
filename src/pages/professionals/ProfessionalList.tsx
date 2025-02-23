@@ -37,19 +37,54 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   const [totalPages, setTotalPages] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
 
+  // Estados para o polling
+  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Função para verificar se algum modal está aberto
+  const isAnyModalOpen = () => {
+    return showNewProfessionalModal || 
+           showEditModal || 
+           deletingProfessionalId !== null ||
+           showReportModal;
+  };
+
   useEffect(() => {
     fetchProfessionalList(1);
   }, []);
 
+  // Polling effect
+  useEffect(() => {
+    // Não fazer polling quando estiver em modo de busca ou qualquer modal estiver aberto
+    if (isSearching || isAnyModalOpen()) return;
+    
+    const intervalId = setInterval(() => {
+      refreshProfessionalList(currentPage);
+    }, 10000); // 10 segundos
+    
+    return () => clearInterval(intervalId);
+  }, [
+    currentPage, 
+    isSearching, 
+    showNewProfessionalModal, 
+    showEditModal, 
+    deletingProfessionalId,
+    showReportModal
+  ]);
+
   const fetchProfessionalList = async (page: number) => {
+    if (isAnyModalOpen()) return;
+
     setLoading(true);
     setError('');
     setIsSearching(false);
+    setIsRefreshing(true);
     
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado.');
       setLoading(false);
+      setIsRefreshing(false);
       return;
     }
 
@@ -59,14 +94,39 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
       if (response.pagination) {
         setCurrentPage(response.pagination.currentPage);
         setTotalPages(response.pagination.totalPages);
-      } else {
-        setCurrentPage(1);
-        setTotalPages(1);
       }
+      setLastUpdated(new Date());
     } catch (err) {
       setError('Erro ao buscar profissionais.');
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Função para refresh silencioso
+  const refreshProfessionalList = async (page: number) => {
+    if (isRefreshing || isAnyModalOpen()) return;
+    
+    setIsRefreshing(true);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setIsRefreshing(false);
+      return;
+    }
+
+    try {
+      const response = await fetchProfessionalsByPage(token, page);
+      setProfessionals(response.data);
+      if (response.pagination) {
+        setCurrentPage(response.pagination.currentPage);
+        setTotalPages(response.pagination.totalPages);
+      }
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Erro ao atualizar profissionais:', err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -77,11 +137,13 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
   
     setLoading(true);
     setIsSearching(true);
+    setIsRefreshing(true);
     
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       setLoading(false);
+      setIsRefreshing(false);
       return;
     }
   
@@ -96,10 +158,12 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
         const response = await searchProfessionalsByName(token, searchName);
         setProfessionals(response.data);
       }
+      setLastUpdated(new Date());
     } catch (err) {
       setProfessionals([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -109,25 +173,23 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {
-      // Remover formatação do CPF e o campo confirmPassword
       const { confirmPassword, ...rest } = formData;
       const dataToSubmit = {
         ...rest,
         cpf: replaceCPF(formData.cpf)
       };
       
-      await addProfessional(token, dataToSubmit);
+      const response = await addProfessional(token, dataToSubmit);
       toast.success('Profissional cadastrado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchProfessionalList(currentPage);
-      }
+  
+      // Atualiza o estado local imediatamente
+      setProfessionals(prev => [...prev, response.data]);
+      
       setShowNewProfessionalModal(false);
     } catch (err) {
       toast.error('Erro ao cadastrar profissional', {
@@ -150,36 +212,37 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
 
   const handleUpdate = async (formData: any) => {
     if (!editingProfessional) return;
-
+  
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {
-      // Remover confirmPassword e lidar com a senha vazia
       const { confirmPassword, ...restData } = formData;
       let dataToSubmit: any = {
         ...restData,
         cpf: replaceCPF(formData.cpf)
       };
       
-      // Se a senha estiver vazia, remova-a do payload para não alterar a senha
       if (!dataToSubmit.password) {
         delete dataToSubmit.password;
       }
       
-      await updateProfessional(editingProfessional.id, token, dataToSubmit);
+      const response = await updateProfessional(editingProfessional.id, token, dataToSubmit);
       toast.success('Profissional atualizado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchProfessionalList(currentPage);
-      }
+  
+      // Atualiza o estado local imediatamente
+      setProfessionals(prev => 
+        prev.map(prof => 
+          prof.id === editingProfessional.id ? response.data : prof
+        )
+      );
+      
       setShowEditModal(false);
       setEditingProfessional(null);
     } catch (err) {
@@ -201,24 +264,23 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
 
   const handleConfirmDelete = async () => {    
     if (!deletingProfessionalId) return;
-
+  
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {      
       await deleteProfessional(deletingProfessionalId, token);      
       toast.success('Profissional excluído com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchProfessionalList(currentPage);
-      }
+      
+      // Atualiza o estado local imediatamente
+      setProfessionals(prev => prev.filter(prof => prof.id !== deletingProfessionalId));
+      
     } catch (err) {
       console.error('Erro ao deletar:', err);
       toast.error('Erro ao excluir profissional', {
@@ -307,6 +369,35 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
         >
           Buscar
+        </button>
+      </div>
+
+      {/* Indicador de Atualização */}
+      <div className="flex justify-between items-center mb-4 text-sm text-gray-500">
+        <span>
+          Última atualização: {lastUpdated.toLocaleTimeString()}
+        </span>
+        <button
+          onClick={() => isSearching ? handleSearch() : refreshProfessionalList(currentPage)}
+          className="flex items-center px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+          disabled={isRefreshing || isAnyModalOpen()}
+        >
+          {isRefreshing ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Atualizando...
+            </>
+          ) : (
+            <>
+              <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+              </svg>
+              Atualizar
+            </>
+          )}
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Attendance } from '../types';
+//import { Attendance } from '../types/';
 import { WS_URL } from '../config/api';
 
 export const useSocket = (onCallPatient: (attendance: Attendance) => void) => {

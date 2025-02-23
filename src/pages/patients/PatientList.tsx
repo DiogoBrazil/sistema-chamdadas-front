@@ -35,30 +35,47 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
   const [totalPages, setTotalPages] = useState(1);
   const [isSearching, setIsSearching] = useState(false);
   
-  // Novos estados para o polling
+  // Estados para o polling
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Inicial fetch
+  // Função para verificar se algum modal está aberto
+  const isAnyModalOpen = () => {
+    return showNewPatientModal || 
+           showEditModal || 
+           deletingPatientId !== null || 
+           attendancePatientId !== null;
+  };
+
+  // Carregamento inicial
   useEffect(() => {
     fetchPatientList(1);
   }, []);
   
   // Polling effect
   useEffect(() => {
-    // Não fazer polling quando estiver em modo de busca
-    if (isSearching) return;
+    // Não fazer polling quando estiver em modo de busca ou qualquer modal estiver aberto
+    if (isSearching || isAnyModalOpen()) return;
     
     const intervalId = setInterval(() => {
-      // Recarregar os dados da página atual, mas não mostrar o loading
       refreshPatientList(currentPage);
     }, 10000); // 10 segundos
     
     return () => clearInterval(intervalId);
-  }, [currentPage, isSearching]);
+  }, [
+    currentPage, 
+    isSearching, 
+    showNewPatientModal, 
+    showEditModal, 
+    deletingPatientId, 
+    attendancePatientId
+  ]);
 
   // Função normal de fetch com loading
   const fetchPatientList = async (page: number) => {
+    // Se algum modal estiver aberto, não atualiza
+    if (isAnyModalOpen()) return;
+
     setLoading(true);
     setError('');
     setIsSearching(false);
@@ -86,9 +103,10 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
   };
   
-  // Função para refresh silencioso (sem loading geral)
+  // Função para refresh silencioso
   const refreshPatientList = async (page: number) => {
-    if (isRefreshing) return; // Evita múltiplas atualizações
+    // Se algum modal estiver aberto ou já estiver atualizando, não faz nada
+    if (isRefreshing || isAnyModalOpen()) return;
     
     setIsRefreshing(true);
     const token = localStorage.getItem('token');
@@ -105,7 +123,6 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       setLastUpdated(new Date());
     } catch (err) {
       console.error('Erro ao atualizar pacientes:', err);
-      // Não mostra erro para o usuário em atualizações silenciosas
     } finally {
       setIsRefreshing(false);
     }
@@ -131,7 +148,6 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     try {
       if (searchCpf) {
         const response = await searchPatientByCpf(token, searchCpf);
-        // Se encontrou o paciente, coloca em um array se necessário, senão array vazio
         setPatients(Array.isArray(response.data) ? response.data : (response.data ? [response.data] : []));
       } else if (searchName) {
         const response = await searchPatientsByName(token, searchName);
@@ -152,18 +168,15 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {
-      await addPatient(token, formData);
+      const response = await addPatient(token, formData);
       toast.success('Paciente cadastrado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchPatientList(currentPage);
-      }
+      // Atualiza o estado local imediatamente
+      setPatients(prev => [...prev, response.data]);
       setShowNewPatientModal(false);
     } catch (err) {
       toast.error('Erro ao cadastrar paciente', {
@@ -206,13 +219,11 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
         }
       });
     } catch (err: any) {
-      // Verifica se o erro é devido a paciente não encontrado (já foi excluído)
       if (err.response && err.response.status === 404) {
         toast.error('Este paciente não foi encontrado. A lista será atualizada.', {
           position: 'bottom-right',
           style: { background: 'red', color: 'white' },
         });
-        // Atualiza a lista automaticamente
         if (isSearching) {
           handleSearch();
         } else {
@@ -241,34 +252,33 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
 
   const handleUpdate = async (formData: any) => {
     if (!editingPatient) return;
-
+  
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {
-      await updatePatient(editingPatient.id, token, formData);
+      const response = await updatePatient(editingPatient.id, token, formData);
       toast.success('Paciente atualizado com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchPatientList(currentPage);
-      }
+      // Atualiza o estado local imediatamente
+      setPatients(prev => 
+        prev.map(patient => 
+          patient.id === editingPatient.id ? response.data : patient
+        )
+      );
       setShowEditModal(false);
       setEditingPatient(null);
     } catch (err: any) {
-      // Verifica se o erro é devido a paciente não encontrado (já foi excluído)
       if (err.response && err.response.status === 404) {
         toast.error('Este paciente não foi encontrado. A lista será atualizada.', {
           position: 'bottom-right',
           style: { background: 'red', color: 'white' },
         });
-        // Atualiza a lista automaticamente
         if (isSearching) {
           handleSearch();
         } else {
@@ -291,35 +301,29 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
 
   const handleConfirmDelete = async () => {    
     if (!deletingPatientId) return;
-
+  
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Usuário não autenticado');
       return;
     }
-
+  
     try {      
       await deletePatient(deletingPatientId, token);      
       toast.success('Paciente excluído com sucesso!', {
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
-      if (isSearching) {
-        handleSearch();
-      } else {
-        fetchPatientList(currentPage);
-      }
+      // Atualiza o estado local imediatamente
+      setPatients(prev => prev.filter(patient => patient.id !== deletingPatientId));
     } catch (err: any) {
       console.error('Erro ao deletar:', err);
       
-      // Se o erro for 404 (Não encontrado) ou outro erro de conflito
       if (err.response && (err.response.status === 404 || err.response.status === 409)) {
         toast.error('Este paciente já foi excluído ou modificado por outro usuário. A lista será atualizada.', {
           position: 'bottom-right',
           style: { background: 'red', color: 'white' },
         });
-        
-        // Atualiza a lista automaticamente quando detectar conflito
         if (isSearching) {
           handleSearch();
         } else {
@@ -422,9 +426,9 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
           Última atualização: {lastUpdated.toLocaleTimeString()}
         </span>
         <button
-          onClick={() => isSearching ? handleSearch() : fetchPatientList(currentPage)}
+          onClick={() => isSearching ? handleSearch() : refreshPatientList(currentPage)}
           className="flex items-center px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-          disabled={isRefreshing}
+          disabled={isRefreshing || isAnyModalOpen()}
         >
           {isRefreshing ? (
             <>
