@@ -5,22 +5,56 @@ import classNames from 'classnames';
 export const CallPanel: React.FC = React.memo(() => {
   const [currentCall, setCurrentCall] = useState<Attendance | null>(null);
   const [callHistory, setCallHistory] = useState<(Attendance & { callTime: Date })[]>([]);
+  const [speechSupported, setSpeechSupported] = useState(false);
   
   // Fila de pronúncias
   const speechQueue = useRef<Attendance[]>([]);
   const isSpeaking = useRef<boolean>(false);
+
+  // Verificar suporte à síntese de voz quando o componente montar
+  useEffect(() => {
+    const checkSpeechSupport = () => {
+      return 'speechSynthesis' in window && 
+             window.speechSynthesis.getVoices().length > 0;
+    };
+
+    if ('speechSynthesis' in window) {
+      // Verificar inicialmente
+      setSpeechSupported(checkSpeechSupport());
+
+      // Adicionar listener para quando as vozes forem carregadas
+      window.speechSynthesis.onvoiceschanged = () => {
+        setSpeechSupported(checkSpeechSupport());
+      };
+    }
+  }, []);
   
   // Função para processar a fila de pronúncias
   const processSpeechQueue = useCallback(() => {
-    if (speechQueue.current.length === 0 || isSpeaking.current) return;
+    if (speechQueue.current.length === 0 || isSpeaking.current || !speechSupported) return;
     
     isSpeaking.current = true;
     const nextAttendance = speechQueue.current[0];
     
     const text = `${nextAttendance.patient.fullName}, compareça ao consultório ${nextAttendance.officeNumber}`;      
     const utterance = new SpeechSynthesisUtterance(text);
+
+    // Tentar encontrar uma voz em português
+    const voices = window.speechSynthesis.getVoices();
+    const ptVoice = voices.find(voice => 
+      voice.lang.startsWith('pt') || 
+      voice.lang.includes('portuguese')
+    );
+    
+    if (ptVoice) {
+      utterance.voice = ptVoice;
+    }
+
+    // Configurações para melhor compatibilidade
     utterance.lang = 'pt-BR';
     utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
     
     // Quando terminar de falar, remove da fila e processa o próximo
     utterance.onend = () => {
@@ -29,23 +63,58 @@ export const CallPanel: React.FC = React.memo(() => {
       processSpeechQueue(); // Processa o próximo item da fila
     };
     
-    // Se ocorrer erro na pronúncia, não trava a fila
-    utterance.onerror = () => {
+    // Se ocorrer erro na pronúncia, tenta novamente
+    const maxAttempts = 3;
+    let attempts = 0;
+
+    utterance.onerror = (event) => {
+      console.error('Erro na síntese de voz:', event);
+      
+      if (attempts < maxAttempts) {
+        attempts++;
+        try {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+        } catch (error) {
+          console.error('Erro ao tentar novamente:', error);
+          // Se falhar todas as tentativas, move para o próximo item
+          if (attempts === maxAttempts) {
+            speechQueue.current.shift();
+            isSpeaking.current = false;
+            processSpeechQueue();
+          }
+        }
+      } else {
+        // Mover para o próximo após tentativas máximas
+        speechQueue.current.shift();
+        isSpeaking.current = false;
+        processSpeechQueue();
+      }
+    };
+
+    try {
+      window.speechSynthesis.cancel(); // Limpar fila anterior
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      console.error('Erro inicial na síntese de voz:', error);
+      // Em caso de erro inicial, move para o próximo
       speechQueue.current.shift();
       isSpeaking.current = false;
       processSpeechQueue();
-    };
-    
-    window.speechSynthesis.speak(utterance);
-  }, []);
+    }
+  }, [speechSupported]);
   
   // Adiciona à fila de pronúncia
   const speakPatientName = useCallback((attendance: Attendance) => {
-    if ('speechSynthesis' in window) {
-      speechQueue.current.push(attendance);
-      processSpeechQueue();
+    if (!speechSupported) {
+      // Aqui você pode adicionar um fallback, como um áudio pré-gravado
+      console.log('Síntese de voz não suportada neste dispositivo');
+      return;
     }
-  }, [processSpeechQueue]);
+
+    speechQueue.current.push(attendance);
+    processSpeechQueue();
+  }, [speechSupported, processSpeechQueue]);
 
   const handleNewCall = useCallback((attendance: Attendance) => {
     const callWithTime = { 
@@ -88,8 +157,15 @@ export const CallPanel: React.FC = React.memo(() => {
 
   return (
     <div className="px-4 py-6">
-      {/* Status da Conexão */}
-      <div className="mb-4 flex justify-end">
+      {/* Status da Conexão e Síntese de Voz */}
+      <div className="mb-4 flex justify-between">
+        <span className={classNames(
+          'inline-flex items-center',
+          !speechSupported ? 'text-yellow-500' : 'text-green-500'
+        )}>
+          ●&nbsp;
+          {!speechSupported ? 'Áudio não disponível' : 'Áudio disponível'}
+        </span>
         <span className={classNames('inline-flex items-center', getConnectionStatusColor())}>
           ●&nbsp;
           {connectionStatus === 'connected' ? 'Conectado' : 
