@@ -6,15 +6,6 @@ interface FormData{
   birthDate: string;
 }
 
-// export const fetchPatients = async (token: string): Promise<PatientResponse> => {
-//   const response = await apiClient.get<PatientResponse>('/api/patients', {
-//     headers: {
-//       Authorization: `Bearer ${token}`,
-//     },
-//   });
-//   return response.data;
-// };
-
 export const fetchPatientsByPage = async (token: string, page: number): Promise<PatientResponse> => {
   const response = await apiClient.get<PatientResponse>(`/api/patients/page/${page}`, {
     headers: {
@@ -52,9 +43,15 @@ export const createAttendance = async (patientId: number, token: string) => {
 
 export const addPatient = async (token: string, formData: FormData) => {
   try {
+    const fullNameReplace = formData.fullName.toUpperCase();
+    const formDataReplace = {
+      fullName: fullNameReplace,
+      cpf: formData.cpf,
+      birthDate: formData.birthDate,
+    }
     const response = await apiClient.post(
       '/api/patients',      
-        formData,
+      formDataReplace,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -71,9 +68,15 @@ export const addPatient = async (token: string, formData: FormData) => {
 
 export const updatePatient = async (id: number, token: string, formData: FormData) => {
   try {
+    const fullNameReplace = formData.fullName.toUpperCase();
+    const formDataReplace = {
+      fullName: fullNameReplace,
+      cpf: formData.cpf,
+      birthDate: formData.birthDate,
+    }
     const response = await apiClient.put(
       `/api/patients/${id}`,
-      formData,
+      formDataReplace,
       {
         headers: {
           Authorization: `Bearer ${token}`,

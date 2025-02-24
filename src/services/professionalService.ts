@@ -49,11 +49,17 @@ export const addProfessional = async (token: string, formData: FormData) => {
   if(!token){
     throw new Error('Token não encontrado')
   }
-
   try {
+    const fullNameReplace = formData.fullName.toUpperCase();
+    const formDataReplace = {
+      fullName: fullNameReplace,
+      cpf: formData.cpf,
+      profile: formData.profile,
+      password: formData.password
+    }
     const response = await apiClient.post(
       '/api/professionals',      
-        formData,
+      formDataReplace,
       {
         headers: {
           Authorization: `Bearer ${token}`          
@@ -73,9 +79,16 @@ export const updateProfessional = async (id: number, token: string, formData: Fo
   }
 
   try {
+    const fullNameReplace = formData.fullName.toUpperCase();
+    const formDataReplace = {
+      fullName: fullNameReplace,
+      cpf: formData.cpf,
+      profile: formData.profile,
+      password: formData.password
+    }
     const response = await apiClient.put(
       `/api/professionals/${id}`,
-      formData,
+      formDataReplace,
       {
         headers: {
           Authorization: `Bearer ${token}`,
