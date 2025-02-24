@@ -413,7 +413,6 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
                 <p className="text-sm text-gray-500">CPF: {formatCPF(professional.cpf)}</p>
                 <p className="text-sm text-gray-500">
                   Perfil: {getProfileLabel(professional.profile)}
-                  {professional.currentOffice && ` - Consultório ${professional.currentOffice}`}
                 </p>
               </div>
               <div className="flex space-x-2">
