@@ -20,6 +20,41 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   setError('');
+  //   const token = localStorage.getItem('token');
+  //   if (!token) {
+  //     setError('Usuário não autenticado');
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   const cpfValidation = validateCPF(formData.cpf);
+  //   if (cpfValidation) {      
+  //     setError(cpfValidation);
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     await addPatient(token, formData);
+  //     toast.success('Paciente cadastrado com sucesso!', {
+  //       position: 'bottom-right',
+  //       style: { background: 'green', color: 'white' },
+  //     }); 
+  //     setFormData(initialFormData);     
+  //   } catch (err) {      
+  //     toast.error('Erro ao cadastrar paciente', {
+  //       position: 'bottom-right',
+  //       style: { background: 'red', color: 'white' },
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -29,15 +64,15 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
       setLoading(false);
       return;
     }
-
+  
     const cpfValidation = validateCPF(formData.cpf);
     if (cpfValidation) {      
       setError(cpfValidation);
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       await addPatient(token, formData);
       toast.success('Paciente cadastrado com sucesso!', {
@@ -45,11 +80,19 @@ export const PatientForm: React.FC<PatientFormProps> = ({ onBack }) => {
         style: { background: 'green', color: 'white' },
       }); 
       setFormData(initialFormData);     
-    } catch (err) {      
-      toast.error('Erro ao cadastrar paciente', {
+    } catch (err: any) {
+      // Exibir mensagem personalizada quando for erro de CPF duplicado
+      const errorMessage = err.message || 'Erro ao cadastrar paciente';
+      
+      toast.error(errorMessage, {
         position: 'bottom-right',
         style: { background: 'red', color: 'white' },
       });
+      
+      // Se for um erro de CPF duplicado, também atualiza o estado de erro do form
+      if (err.message && err.message.includes('Já existe um paciente cadastrado com esse CPF')) {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

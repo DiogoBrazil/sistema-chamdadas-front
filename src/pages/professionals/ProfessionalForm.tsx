@@ -86,35 +86,77 @@ export const ProfessionalForm: React.FC<ProfessionalFormProps> = ({ onBack }) =>
     return newErrors.length === 0;
   };
 
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+    
+  //   if (!validateForm()) return;
+
+  //   setLoading(true);
+
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     if (!token) throw new Error('Token não encontrado');
+
+  //     const { confirmPassword, ...submitData } = formData;
+  //     const response = await addProfessional(token, {
+  //       ...submitData,
+  //       cpf: replaceCPF(submitData.cpf)
+  //     });
+
+  //     if (response.status_code !== 201) {
+  //       throw new Error('Erro ao cadastrar profissional');
+  //     }
+
+  //     toast.success('Profissional cadastrado com sucesso!', {
+  //       duration: 3000,
+  //       position: 'bottom-right',
+  //       style: { background: 'green', color: 'white' },
+  //     });
+  //     onBack();
+  //   } catch (error) {
+  //     toast.error('Erro ao cadastrar profissional. Tente novamente.', {
+  //       duration: 3000,
+  //       position: 'bottom-right',
+  //       style: { background: '#ef4444', color: 'white' },
+  //     });
+  //     console.error('Error adding professional:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
-
+  
     setLoading(true);
-
+  
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Token não encontrado');
-
+  
       const { confirmPassword, ...submitData } = formData;
       const response = await addProfessional(token, {
         ...submitData,
         cpf: replaceCPF(submitData.cpf)
       });
-
+  
       if (response.status_code !== 201) {
         throw new Error('Erro ao cadastrar profissional');
       }
-
+  
       toast.success('Profissional cadastrado com sucesso!', {
         duration: 3000,
         position: 'bottom-right',
         style: { background: 'green', color: 'white' },
       });
       onBack();
-    } catch (error) {
-      toast.error('Erro ao cadastrar profissional. Tente novamente.', {
+    } catch (error: any) {
+      // Exibir mensagem personalizada quando for erro de CPF duplicado
+      const errorMessage = error.message || 'Erro ao cadastrar profissional. Tente novamente.';
+      
+      toast.error(errorMessage, {
         duration: 3000,
         position: 'bottom-right',
         style: { background: '#ef4444', color: 'white' },

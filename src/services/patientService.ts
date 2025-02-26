@@ -41,6 +41,30 @@ export const createAttendance = async (patientId: number, token: string) => {
   );
 };
 
+// export const addPatient = async (token: string, formData: FormData) => {
+//   try {
+//     const fullNameReplace = formData.fullName.toUpperCase();
+//     const formDataReplace = {
+//       fullName: fullNameReplace,
+//       cpf: formData.cpf,
+//       birthDate: formData.birthDate,
+//     }
+//     const response = await apiClient.post(
+//       '/api/patients',      
+//       formDataReplace,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//         },
+//       }
+//     );
+//     return response.data; 
+//   } catch (err) {
+//     throw err; 
+//   }
+// };
+
 export const addPatient = async (token: string, formData: FormData) => {
   try {
     const fullNameReplace = formData.fullName.toUpperCase();
@@ -60,11 +84,43 @@ export const addPatient = async (token: string, formData: FormData) => {
       }
     );
     return response.data; 
-  } catch (err) {
+  } catch (err: any) {
+    // Verificar se é um erro de CPF duplicado
+    if (err.response?.data?.error && 
+        typeof err.response.data.error === 'string' && 
+        err.response.data.error.includes('Unique constraint failed') && 
+        err.response.data.error.includes('(`cpf`)')) {
+      throw new Error('Já existe um paciente cadastrado com esse CPF');
+    }
     throw err; 
   }
 };
 
+
+// export const updatePatient = async (id: number, token: string, formData: FormData) => {
+//   try {
+//     const fullNameReplace = formData.fullName.toUpperCase();
+//     const formDataReplace = {
+//       fullName: fullNameReplace,
+//       cpf: formData.cpf,
+//       birthDate: formData.birthDate,
+//     }
+//     const response = await apiClient.put(
+//       `/api/patients/${id}`,
+//       formDataReplace,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//           'api_key': apiClient.defaults.headers.api_key
+//         },
+//       }
+//     );
+//     return response.data;
+//   } catch (err) {
+//     throw err;
+//   }
+// };
 
 export const updatePatient = async (id: number, token: string, formData: FormData) => {
   try {
@@ -86,7 +142,14 @@ export const updatePatient = async (id: number, token: string, formData: FormDat
       }
     );
     return response.data;
-  } catch (err) {
+  } catch (err: any) {
+    // Verificar se é um erro de CPF duplicado
+    if (err.response?.data?.error && 
+        typeof err.response.data.error === 'string' && 
+        err.response.data.error.includes('Unique constraint failed') && 
+        err.response.data.error.includes('(`cpf`)')) {
+      throw new Error('Já existe um paciente cadastrado com esse CPF');
+    }
     throw err;
   }
 };

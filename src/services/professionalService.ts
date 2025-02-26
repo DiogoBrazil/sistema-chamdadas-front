@@ -1,5 +1,3 @@
-// sistema-chamadas-react/src/services/professionalService.ts
-
 import apiClient from "./apiClient";
 
 interface FormData {
@@ -45,6 +43,34 @@ export const fetchProfessinals = async (token: string): Promise<ProfessionalResp
   return response.data;
 };
 
+// export const addProfessional = async (token: string, formData: FormData) => {
+//   if(!token){
+//     throw new Error('Token não encontrado')
+//   }
+//   try {
+//     const fullNameReplace = formData.fullName.toUpperCase();
+//     const formDataReplace = {
+//       fullName: fullNameReplace,
+//       cpf: formData.cpf,
+//       profile: formData.profile,
+//       password: formData.password
+//     }
+//     const response = await apiClient.post(
+//       '/api/professionals',      
+//       formDataReplace,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`          
+//         },
+//       }
+//     ); 
+       
+//     return response.data; 
+//   } catch (err) {
+//     throw err; 
+//   }
+// };
+
 export const addProfessional = async (token: string, formData: FormData) => {
   if(!token){
     throw new Error('Token não encontrado')
@@ -68,10 +94,48 @@ export const addProfessional = async (token: string, formData: FormData) => {
     ); 
        
     return response.data; 
-  } catch (err) {
+  } catch (err: any) {
+    // Verificar se é um erro de CPF duplicado
+    if (err.response?.data?.error && 
+        typeof err.response.data.error === 'string' && 
+        err.response.data.error.includes('Unique constraint failed') && 
+        err.response.data.error.includes('(`cpf`)')) {
+      throw new Error('Já existe um profissional cadastrado com esse CPF');
+    }
     throw err; 
   }
 };
+
+
+// export const updateProfessional = async (id: number, token: string, formData: FormData) => {
+//   if (!token) {
+//     throw new Error('Token não encontrado');
+//   }
+
+//   try {
+//     const fullNameReplace = formData.fullName.toUpperCase();
+//     const formDataReplace = {
+//       fullName: fullNameReplace,
+//       cpf: formData.cpf,
+//       profile: formData.profile,
+//       password: formData.password
+//     }
+//     const response = await apiClient.put(
+//       `/api/professionals/${id}`,
+//       formDataReplace,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json',
+//           'api_key': apiClient.defaults.headers.api_key
+//         },
+//       }
+//     );
+//     return response.data;
+//   } catch (err) {
+//     throw err;
+//   }
+// };
 
 export const updateProfessional = async (id: number, token: string, formData: FormData) => {
   if (!token) {
@@ -98,7 +162,14 @@ export const updateProfessional = async (id: number, token: string, formData: Fo
       }
     );
     return response.data;
-  } catch (err) {
+  } catch (err: any) {
+    // Verificar se é um erro de CPF duplicado
+    if (err.response?.data?.error && 
+        typeof err.response.data.error === 'string' && 
+        err.response.data.error.includes('Unique constraint failed') && 
+        err.response.data.error.includes('(`cpf`)')) {
+      throw new Error('Já existe um profissional cadastrado com esse CPF');
+    }
     throw err;
   }
 };
