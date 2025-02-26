@@ -12,6 +12,8 @@ import {
 import toast from 'react-hot-toast';
 import { EditModal } from '../../components/EditModal';
 import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
+import { Pagination } from '../../components/ui/Pagination';
+
 
 interface PatientListProps {
   onBack: () => void;
@@ -162,6 +164,30 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
     }
   };
 
+  // const handleCreatePatient = async (formData: any) => {
+  //   const token = localStorage.getItem('token');
+  //   if (!token) {
+  //     setError('Usuário não autenticado');
+  //     return;
+  //   }
+  
+  //   try {
+  //     const response = await addPatient(token, formData);
+  //     toast.success('Paciente cadastrado com sucesso!', {
+  //       position: 'bottom-right',
+  //       style: { background: 'green', color: 'white' },
+  //     });
+  //     // Atualiza o estado local imediatamente
+  //     setPatients(prev => [...prev, response.data]);
+  //     setShowNewPatientModal(false);
+  //   } catch (err) {
+  //     toast.error('Erro ao cadastrar paciente', {
+  //       position: 'bottom-right',
+  //       style: { background: 'red', color: 'white' },
+  //     });
+  //   }
+  // };
+
   const handleCreatePatient = async (formData: any) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -178,8 +204,11 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       // Atualiza o estado local imediatamente
       setPatients(prev => [...prev, response.data]);
       setShowNewPatientModal(false);
-    } catch (err) {
-      toast.error('Erro ao cadastrar paciente', {
+    } catch (err: any) {
+      // Exibir mensagem personalizada quando for erro de CPF duplicado
+      const errorMessage = err.message || 'Erro ao cadastrar paciente';
+      
+      toast.error(errorMessage, {
         position: 'bottom-right',
         style: { background: 'red', color: 'white' },
       });
@@ -495,21 +524,11 @@ export const PatientList: React.FC<PatientListProps> = ({ onBack }) => {
       </div>
 
       {!isSearching && totalPages > 1 && (
-        <div className="mt-6 flex justify-center space-x-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => fetchPatientList(page)}
-              className={`px-4 py-2 rounded-md ${
-                currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-        </div>
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => fetchPatientList(page)}
+        />
       )}
 
       {showNewPatientModal && (

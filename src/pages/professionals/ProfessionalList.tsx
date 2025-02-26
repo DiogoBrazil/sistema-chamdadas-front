@@ -14,6 +14,8 @@ import { EditModal } from '../../components/EditModal';
 import { ConfirmModal } from '../../components/EditModal/ConfirmModal';
 import { ReportModal } from '../../components/ui/ReportModal';
 import toast from 'react-hot-toast';
+import { Pagination } from '../../components/ui/Pagination';
+
 
 interface ProfessionalListProps {
   onBack: () => void;
@@ -167,6 +169,38 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
     }
   };
 
+  // const handleCreateProfessional = async (formData: any) => {
+  //   const token = localStorage.getItem('token');
+  //   if (!token) {
+  //     setError('Usuário não autenticado');
+  //     return;
+  //   }
+  
+  //   try {
+  //     const { confirmPassword, ...rest } = formData;
+  //     const dataToSubmit = {
+  //       ...rest,
+  //       cpf: replaceCPF(formData.cpf)
+  //     };
+      
+  //     const response = await addProfessional(token, dataToSubmit);
+  //     toast.success('Profissional cadastrado com sucesso!', {
+  //       position: 'bottom-right',
+  //       style: { background: 'green', color: 'white' },
+  //     });
+  
+  //     // Atualiza o estado local imediatamente
+  //     setProfessionals(prev => [...prev, response.data]);
+      
+  //     setShowNewProfessionalModal(false);
+  //   } catch (err) {
+  //     toast.error('Erro ao cadastrar profissional', {
+  //       position: 'bottom-right',
+  //       style: { background: 'red', color: 'white' },
+  //     });
+  //   }
+  // };
+
   const handleCreateProfessional = async (formData: any) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -191,8 +225,11 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
       setProfessionals(prev => [...prev, response.data]);
       
       setShowNewProfessionalModal(false);
-    } catch (err) {
-      toast.error('Erro ao cadastrar profissional', {
+    } catch (err: any) {
+      // Exibir mensagem personalizada quando for erro de CPF duplicado
+      const errorMessage = err.message || 'Erro ao cadastrar profissional';
+      
+      toast.error(errorMessage, {
         position: 'bottom-right',
         style: { background: 'red', color: 'white' },
       });
@@ -448,21 +485,11 @@ export const ProfessionalList: React.FC<ProfessionalListProps> = ({ onBack }) =>
       </div>
 
       {!isSearching && totalPages > 1 && (
-        <div className="mt-6 flex justify-center space-x-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => fetchProfessionalList(page)}
-              className={`px-4 py-2 rounded-md ${
-                currentPage === page
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-        </div>
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => fetchProfessionalList(page)}
+        />
       )}
 
       {showNewProfessionalModal && (
